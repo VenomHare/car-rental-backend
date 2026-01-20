@@ -10,6 +10,8 @@ export const sendSuccessResponse = (res: Response, data: object, status?: number
 export const sendErrorResponse = (res: Response, err: string, status?: number) => {
     res.status(status ?? 500).json({
         success: false,
-        error: err
+        data: {
+            message: err
+        }
     })
 }

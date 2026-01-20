@@ -2,19 +2,18 @@ import { Router } from "express";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import type { AuthRequest } from "../lib/types";
 import { sendErrorResponse, sendSuccessResponse } from "../lib/response";
-import { CreateBookingRequest, EditBookingStatusRequest } from "../lib/zod.schemas";
+import { CreateBookingRequest, EditBookingRequest, EditBookingStatusRequest } from "../lib/zod.schemas";
 import { prisma } from "../lib/prisma";
 
 const bookingRouter = Router();
 
-bookingRouter.post("/", authMiddleware, async (req : AuthRequest, res) => {
+bookingRouter.post("/", authMiddleware, async (req: AuthRequest, res) => {
     try {
         const { data, success } = CreateBookingRequest.safeParse(req.body);
         if (!success) {
             sendErrorResponse(res, "invalid inputs", 400);
             return
         }
-
         const bookingData = await prisma.bookings.create({
             data: {
                 user_id: req.userId!,
@@ -32,14 +31,13 @@ bookingRouter.post("/", authMiddleware, async (req : AuthRequest, res) => {
         const totalCost = data.rentPerDay * data.days;
 
         sendSuccessResponse(res, {
-            "message":"Booking created successfully",
+            "message": "Booking created successfully",
             "bookingId": bookingData.id,
             totalCost
         }, 201);
         return;
     }
-    catch(err)
-    {
+    catch (err) {
         console.log(err);
         sendErrorResponse(res, "something went wrong");
     }
@@ -49,6 +47,10 @@ bookingRouter.get("/", authMiddleware, async (req: AuthRequest, res) => {
     try {
         const summary = req.query.summary;
         const bookingId = req.query.bookingId;
+        if (bookingId && summary) {
+            sendErrorResponse(res, "invalid inputs", 400);
+            return;
+        }
         if (summary) {
             const userBookings = await prisma.bookings.findMany({
                 where: {
@@ -59,19 +61,17 @@ bookingRouter.get("/", authMiddleware, async (req: AuthRequest, res) => {
             userBookings.forEach((booking: any) => {
                 totalSpent += (booking.days * booking.rent_per_day);
             });
-
             sendSuccessResponse(res, {
                 "userId": req.userId!,
-                "username":req.username!,
+                "username": req.username!,
                 "totalBookings": userBookings.length,
-                "totalAmountSpent": totalSpent
+                "totalAmountSpend": totalSpent
             }, 200);
             return;
         }
         if (bookingId) {
             const id = parseInt(bookingId as string);
-            if (isNaN(id))
-            {
+            if (isNaN(id)) {
                 sendErrorResponse(res, "bookingId not found", 404);
                 return;
             }
@@ -87,21 +87,19 @@ bookingRouter.get("/", authMiddleware, async (req: AuthRequest, res) => {
                 return;
             }
 
-            sendSuccessResponse(res,  [
-                {
-                    "id": bookingData.id,
-                    "car_name": bookingData.car_name,
-                    "days": bookingData.days,
-                    "rent_per_day": bookingData.rent_per_day,
-                    "status": bookingData.status,
-                    "totalCost": bookingData.days * bookingData.rent_per_day
-                }
-            ], 200);
+            sendSuccessResponse(res, {
+                "id": bookingData.id,
+                "car_name": bookingData.car_name,
+                "days": bookingData.days,
+                "rent_per_day": bookingData.rent_per_day,
+                "status": bookingData.status,
+                "totalCost": bookingData.days * bookingData.rent_per_day
+            }, 200);
             return;
         }
         else {
             const allBookingsData = await prisma.bookings.findMany({
-                where : {
+                where: {
                     user_id: req.userId!
                 }
             });
@@ -119,8 +117,7 @@ bookingRouter.get("/", authMiddleware, async (req: AuthRequest, res) => {
         }
 
     }
-    catch(err)
-    {
+    catch (err) {
         console.log(err);
         sendErrorResponse(res, "something went wrong");
     }
@@ -165,10 +162,10 @@ bookingRouter.put("/:bookingId", authMiddleware, async (req: AuthRequest, res) =
                 throw new Error("Failed to update data in booking table");
             }
             sendSuccessResponse(res, {
-                "message":"Booking updated successfully",
-                "booking":{
+                "message": "Booking updated successfully",
+                "booking": {
                     "id": bookingUpdate.id,
-                    "car_name":bookingUpdate.car_name,
+                    "car_name": bookingUpdate.car_name,
                     "days": bookingUpdate.days,
                     "rent_per_day": bookingUpdate.rent_per_day,
                     "status": bookingUpdate.status,
@@ -179,7 +176,7 @@ bookingRouter.put("/:bookingId", authMiddleware, async (req: AuthRequest, res) =
 
         }
         else {
-            const { success, data } = CreateBookingRequest.safeParse(req.body);
+            const { success, data } = EditBookingRequest.safeParse(req.body);
             if (!success) {
                 sendErrorResponse(res, "invalid inputs", 400);
                 return;
@@ -214,10 +211,10 @@ bookingRouter.put("/:bookingId", authMiddleware, async (req: AuthRequest, res) =
                 throw new Error("Failed to update data in booking table");
             }
             sendSuccessResponse(res, {
-                "message":"Booking updated successfully",
-                "booking":{
+                "message": "Booking updated successfully",
+                "booking": {
                     "id": bookingUpdate.id,
-                    "car_name":bookingUpdate.car_name,
+                    "car_name": bookingUpdate.car_name,
                     "days": bookingUpdate.days,
                     "rent_per_day": bookingUpdate.rent_per_day,
                     "status": bookingUpdate.status,
@@ -228,8 +225,8 @@ bookingRouter.put("/:bookingId", authMiddleware, async (req: AuthRequest, res) =
         }
 
     }
-    catch(err){
-         console.log(err);
+    catch (err) {
+        console.log(err);
         sendErrorResponse(res, "something went wrong");
     }
 });
@@ -237,7 +234,7 @@ bookingRouter.put("/:bookingId", authMiddleware, async (req: AuthRequest, res) =
 bookingRouter.delete("/:bookingId", authMiddleware, async (req: AuthRequest, res) => {
     try {
         const bookingId = parseInt(req.params.bookingId as string);
-        if (isNaN(bookingId)){
+        if (isNaN(bookingId)) {
             sendErrorResponse(res, "booking not found", 404);
             return;
         }
@@ -264,12 +261,12 @@ bookingRouter.delete("/:bookingId", authMiddleware, async (req: AuthRequest, res
         });
 
         sendSuccessResponse(res, {
-            "message":"Booking deleted successfully"
+            "message": "Booking deleted successfully"
         }, 200);
         return;
     }
-    catch(err){
-         console.log(err);
+    catch (err) {
+        console.log(err);
         sendErrorResponse(res, "something went wrong");
     }
 });

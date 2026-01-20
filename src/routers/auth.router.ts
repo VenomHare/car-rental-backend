@@ -9,8 +9,9 @@ const authRouter = Router()
 
 authRouter.post("/signup", async (req, res) => {
     try {
-        const { success, data } = AuthRequest.safeParse(req.body);
+        const { success, data, error } = AuthRequest.safeParse(req.body);
         if (!success) {
+            console.log(error);
             sendErrorResponse(res, "invalid inputs", 400);
             return;
         }
@@ -51,7 +52,7 @@ authRouter.post("/signup", async (req, res) => {
 
 authRouter.post("/login", async (req, res) => {
     try {
-        const { success, data } = AuthRequest.safeParse(req.body);
+        const { success, data, error } = AuthRequest.safeParse(req.body);
         if (!success) {
             sendErrorResponse(res, "invalid inputs", 400);
             return;
